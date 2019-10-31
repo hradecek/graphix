@@ -2,7 +2,7 @@
 import logging
 import math
 
-from graphix.assetstore.model import Category, Product, ProductQ
+from graphix.assetstore.model import Category, Product, ProductQ, to_query
 from graphix.assetstore.query import QueryExecutor, SingleQueryExecutor, BatchQueryExecutor
 
 logging.basicConfig(level=logging.ERROR)
@@ -15,8 +15,8 @@ class AssetStore:
     API_URL = BASE_URL + '/api/graphql'
     API_BATCH_URL = API_URL + '/batch'
 
-    CATEGORY = 'category'
     PRODUCT = 'product'
+    CATEGORY = 'category'
 
     @staticmethod
     def get_package_url(category_name, slug):
@@ -29,6 +29,7 @@ class AssetStoreReader:
     """
 
     RESULTS = 'results'
+    DEFAULT_PAGE_SIZE = 100
 
     def __init__(self):
         self.query_executor = QueryExecutor(AssetStore.API_URL)
@@ -48,7 +49,7 @@ class AssetStoreReader:
         :returns: list of categories
         """
         result = await self.single_query_executor.execute(
-            AssetStoreQuery.search_package_from_solr(f'{AssetStore.CATEGORY} {Category.to_query()}'))
+            AssetStoreQuery.search_package_from_solr(to_query(Category, AssetStore.CATEGORY)))
         categories = list(map(lambda category: Category(**category),
                               result[AssetStoreQuery.SEARCH_PACKAGE_FROM_SOLR][AssetStore.CATEGORY]))
         logger.info("Read %d categories", len(categories))
@@ -61,13 +62,13 @@ class AssetStoreReader:
         :param category: category to be read
         :return: list of all products in category
         """
-        pages = math.ceil(category.count / QueryExecutor.DEFAULT_PAGE_SIZE)
+        pages = math.ceil(category.count / AssetStoreReader.DEFAULT_PAGE_SIZE)
         queries = []
-        for page in range(0, pages):  # TODO: enumerate?
+        for page in range(0, pages):
             queries.append(
                 AssetStoreQuery.search_package_from_solr(page=page,
-                                                         arg=f'["{AssetStore.CATEGORY}: {category.name}"]',
-                                                         query=f'{AssetStoreReader.RESULTS} {ProductQ.to_query()}'))
+                                                         arg={AssetStore.CATEGORY: category.name},
+                                                         query=to_query(ProductQ, AssetStoreReader.RESULTS)))
         results = list(map(lambda result: result[AssetStoreQuery.SEARCH_PACKAGE_FROM_SOLR][AssetStoreReader.RESULTS],
                            await self.batch_query_executor.execute(queries)))
         products_q = AssetStoreReader._dicts_to_list(results, lambda p: ProductQ(**p))
@@ -108,18 +109,17 @@ class AssetStoreQuery:
     SEARCH_PACKAGE_FROM_SOLR = 'searchPackageFromSolr'
 
     @staticmethod
-    def search_package_from_solr(query, arg='[]', page=0, page_size=QueryExecutor.DEFAULT_PAGE_SIZE):
+    def search_package_from_solr(query, arg={}, page=0, page_size=AssetStoreReader.DEFAULT_PAGE_SIZE):
         return (f'{{ {AssetStoreQuery.SEARCH_PACKAGE_FROM_SOLR}'
-                f'({AssetStoreQuery.Q}: {arg}, '
+                f'({AssetStoreQuery.Q}: {AssetStoreQuery._search_package_from_solr_q_arg(arg)}, '
                 f'{AssetStoreQuery.PAGE}: {page}, '
                 f'{AssetStoreQuery.PAGE_SIZE}: {page_size})'
                 f' {{ {query} }} }}')
 
     @staticmethod
+    def _search_package_from_solr_q_arg(args):
+        return "[" + ", ".join(list(map(lambda kv: f'"{kv[0]}: {kv[1]}"', args.items()))) + "]"
+
+    @staticmethod
     def get_product(product_id):
-        return ('{ '
-                f'{AssetStore.PRODUCT}(id: "{product_id}")'
-                ' { '
-                f'{Product.to_query()}'
-                ' }'
-                ' }')
+        return '{ ' + to_query(Product, f'{AssetStore.PRODUCT}(id: "{product_id}")') + ' }'

@@ -7,8 +7,7 @@ from requests import RequestException
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
-# Change log level to DEBUG if you need more information
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 DATA = 'data'
 
@@ -29,8 +28,6 @@ class QueryExecutor:
     """Executes provided GraphQL query via HTTP and returns JSON response."""
 
     CSRF = '_csrf'
-
-    DEFAULT_PAGE_SIZE = 100
 
     def __init__(self, api_url):
         self.api_url = api_url

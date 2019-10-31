@@ -6,8 +6,8 @@ from graphix.assetstore.query import SingleQueryExecutor, QueryExecutor
 from graphix.elastic.elasticsearch_writer import ElasticsearchWriter
 from graphix.elastic.model import Product
 
-assetStoreReader = AssetStoreReader()
 elasticWriter = ElasticsearchWriter()
+assetStoreReader = AssetStoreReader()
 
 SOURCE = 'assetstore'
 
@@ -32,13 +32,14 @@ async def main():
 
 
 if __name__ == "__main__":
-    qe = QueryExecutor(AssetStore.API_URL)
-    qe.connect()
-    se = SingleQueryExecutor(qe)
-    print(asyncio.run(
-        se.execute(
-            '{ __type(name: "Price") { name fields { name type { ofType { kind name } } } } }')))
-    print(asyncio.run(
-        se.execute(
-            '{ product(id: "153939") { name originalPrice { price } } }')))
+    asyncio.run(main())
+    # qe = QueryExecutor(AssetStore.API_URL)
+    # qe.connect()
+    # se = SingleQueryExecutor(qe)
+    # print(asyncio.run(
+    #     se.execute(
+    #         '{ __type(name: "Price") { name fields { name type { ofType { kind name } } } } }')))
+    # print(asyncio.run(
+    #     se.execute(
+    #         '{ product(id: "156480") { id slug name description popularTags { name } downloadSize mainImage { big icon } publisher { name supportUrl supportEmail url } } }')))
 

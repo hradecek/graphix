@@ -7,7 +7,7 @@ from requests import RequestException
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 DATA = 'data'
 

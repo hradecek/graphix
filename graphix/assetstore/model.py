@@ -2,7 +2,11 @@
 import inspect
 
 
-class Category:
+class AssetStoreType:
+    pass
+
+
+class Category(AssetStoreType):
     """Represents Category type."""
 
     def __init__(self, name, count):
@@ -19,7 +23,7 @@ class Category:
         return str(self.__dict__)
 
 
-class ProductQ:
+class ProductQ(AssetStoreType):
     """Represents ProductQ type."""
 
     def __init__(self, id, name):
@@ -36,7 +40,7 @@ class ProductQ:
         return str(self.__dict__)
 
 
-class Rating:
+class Rating(AssetStoreType):
     """Represents Rating type."""
 
     def __init__(self, average, count):
@@ -53,7 +57,7 @@ class Rating:
         return str(self.__dict__)
 
 
-class MainImage:
+class MainImage(AssetStoreType):
     """Represents MainImage type."""
 
     def __init__(self, big, icon=None):
@@ -66,8 +70,11 @@ class MainImage:
         self.big = big
         self.icon = icon
 
+    def __str__(self):
+        return str(self.__dict__)
 
-class ProductPublisher:
+
+class ProductPublisher(AssetStoreType):
     """Represents ProductPublisher type."""
 
     def __init__(self, name, supportUrl, supportEmail, url):
@@ -84,8 +91,14 @@ class ProductPublisher:
         self.supportEmail = supportEmail
         self.url = url
 
+    def get_url(self):
+        return self.supportUrl if self.supportUrl is not None else self.url
 
-class ProductTag:
+    def __str__(self):
+        return str(self.__dict__)
+
+
+class ProductTag(AssetStoreType):
     """Represents ProductTag type."""
 
     def __init__(self, name):
@@ -96,8 +109,11 @@ class ProductTag:
         """
         self.name = name
 
+    def __str__(self):
+        return str(self.__dict__)
 
-class OfferRating:
+
+class OfferRating(AssetStoreType):
     """Represents OfferRating type."""
 
     def __init__(self, currency, finalPrice, isFree):
@@ -112,18 +128,22 @@ class OfferRating:
         self.finalPrice = finalPrice
         self.isFree = isFree
 
+    def __str__(self):
+        return str(self.__dict__)
 
-class Product:
+
+class Product(AssetStoreType):
     """Represents Product type."""
 
-    def __init__(self, id, slug, name, description, popularTags: ProductTag, downloadSize, mainImage: MainImage,
-                 publisher: ProductPublisher, originalPrice: OfferRating, state):
+    def __init__(self, id, slug, name, rating: Rating, description, popularTags: ProductTag, downloadSize,
+                 mainImage: MainImage, publisher: ProductPublisher, originalPrice: OfferRating, state):
         """
         Constructor.
 
         :param id:             product's id
         :param slug:           product's slug
         :param name:           product's name
+        :param rating:         product's rating
         :param description:    product's description
         :param popularTags:    list of product's tags (empty if none)
         :param downloadSize:   product's complete download size (in bytes)
@@ -135,6 +155,7 @@ class Product:
         self.id = id
         self.slug = slug
         self.name = name
+        self.rating = Rating(**rating)
         self.description = description
         self.popularTags = popularTags
         self.downloadSize = downloadSize
@@ -142,6 +163,9 @@ class Product:
         self.publisher = ProductPublisher(**publisher)
         self.originalPrice = OfferRating(**originalPrice)
         self.state = state
+
+    def __str__(self):
+        return str({k: v.__dict__ if issubclass(v.__class__, AssetStoreType) else v for k, v in self.__dict__.items()})
 
 
 def to_query(cls, root=None):

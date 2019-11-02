@@ -7,7 +7,7 @@ from graphix.assetstore.query import QueryExecutor, SingleQueryExecutor, BatchQu
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class AssetStore:
@@ -20,7 +20,7 @@ class AssetStore:
 
     @staticmethod
     def get_package_url(category_name, slug):
-        return f'//assetstore.unity.com/packages/{category_name}/{slug}',
+        return f'//assetstore.unity.com/packages/{category_name}/{slug}'
 
 
 class AssetStoreReader:
@@ -42,18 +42,35 @@ class AssetStoreReader:
     def close(self):
         self.query_executor.close()
 
-    async def read_categories(self):
+    # TODO: selects, wrapper functions instead of params
+    async def read_categories(self, skips=[]):
         """
         Read all categories.
 
+        :param skips: name of categories to be filtered out, can be prefix
         :returns: list of categories
         """
         result = await self.single_query_executor.execute(
             AssetStoreQuery.search_package_from_solr(to_query(Category, AssetStore.CATEGORY)))
-        categories = list(map(lambda category: Category(**category),
-                              result[AssetStoreQuery.SEARCH_PACKAGE_FROM_SOLR][AssetStore.CATEGORY]))
-        logger.info("Read %d categories", len(categories))
-        return categories
+        return AssetStoreReader.filtered_categories(
+            list(map(lambda category: Category(**category),
+                     result[AssetStoreQuery.SEARCH_PACKAGE_FROM_SOLR][AssetStore.CATEGORY])),
+            skips)
+
+    @staticmethod
+    def filtered_categories(categories, skips):
+        rest = categories[:]
+        filtered = []
+        for index, category in enumerate(rest):
+            if AssetStoreReader.skip_category(category.name, skips):
+                filtered.append(rest.pop(index))
+        logger.info("Skipped %d categories.", len(filtered))
+        logger.debug(list(map(lambda c: c.name, filtered)))
+        return rest
+
+    @staticmethod
+    def skip_category(category_name, skips):
+        return any(map(lambda skip: category_name.startswith(skip), skips))
 
     async def read_products_q(self, category):
         """
@@ -85,10 +102,15 @@ class AssetStoreReader:
         queries = []
         for product_id in product_ids:
             queries.append(AssetStoreQuery.get_product(product_id))
-        results = list(map(lambda result: result[AssetStore.PRODUCT], await self.batch_query_executor.execute(queries)))
-        products = list(map(lambda p: Product(**p), results))
-        logger.debug("Read '%s' products.", str(len(products)))
-        return products
+        results = list(
+            AssetStoreReader._filter_not_none(
+                map(lambda result: result[AssetStore.PRODUCT], await self.batch_query_executor.execute(queries))))
+        return list(map(lambda p: Product(**p), results))
+
+    # Note: There are cases when product was 'null'
+    @staticmethod
+    def _filter_not_none(results):
+        return filter(lambda r: r is not None, results)
 
     @staticmethod
     def _dicts_to_list(dictionaries, mapper):

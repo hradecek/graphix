@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
+import enum
 import yaml
 
 CONFIG_KEY_ELASTICSEARCH = 'elasticsearch'
 DEFAULT_CONFIG_FILE = '../../config.yaml'
+
+
+class AssetSource(enum.Enum):
+    AssetStore = 'assetstore'
+    CGTrader = 'cgtrader'
+    SketchFab = 'sketchfab'
 
 
 def read_config(config_file=DEFAULT_CONFIG_FILE):
@@ -17,7 +24,3 @@ class ElasticsearchConfig:
     def __init__(self, host, port):
         self.host = host
         self.port = port
-
-
-if __name__ == "__main__":
-    read_config()

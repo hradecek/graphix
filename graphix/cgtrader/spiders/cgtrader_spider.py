@@ -6,7 +6,7 @@ from scrapy import Spider
 from graphix.cgtrader.items import CGTraderProduct
 
 
-class CGTraderSpiderSpider(Spider):
+class CGTraderSpider(Spider):
     """Main spider for CGTrader."""
 
     name = 'cgtrader_spider'
@@ -17,10 +17,10 @@ class CGTraderSpiderSpider(Spider):
     NEXT_PAGE = '(//a[@rel="next"])[1]/@href'
 
     def parse(self, response):
-        for href in response.xpath(CGTraderSpiderSpider.HREF_PRODUCT):
-            yield response.follow(href.extract(), CGTraderSpiderSpider._parse_product)
+        for href in response.xpath(CGTraderSpider.HREF_PRODUCT):
+            yield response.follow(href.extract(), CGTraderSpider._parse_product)
 
-        next_page = response.xpath(CGTraderSpiderSpider.NEXT_PAGE)[0]
+        next_page = response.xpath(CGTraderSpider.NEXT_PAGE)[0]
         if next_page is not None:
             yield response.follow(next_page, callback=self.parse)
 
@@ -33,19 +33,19 @@ class CGTraderSpiderSpider(Spider):
 
     @staticmethod
     def _parse_product(response):
-        image = response.xpath(CGTraderSpiderSpider.IMAGE).extract()[0]
+        image = response.xpath(CGTraderSpider.IMAGE).extract()[0]
         return CGTraderProduct(
-            id=CGTraderSpiderSpider._get_id_from_image_url(image),
-            name=response.xpath(CGTraderSpiderSpider.NAME).extract(),
+            id=CGTraderSpider._get_id_from_image_url(image),
+            name=response.xpath(CGTraderSpider.NAME).extract(),
             image=image,
-            publisher_username=response.xpath(CGTraderSpiderSpider.PUBLISHER_USERNAME).extract(),
-            price=response.xpath(CGTraderSpiderSpider.PRICE).extract(),
+            publisher_username=response.xpath(CGTraderSpider.PUBLISHER_USERNAME).extract(),
+            price=response.xpath(CGTraderSpider.PRICE).extract(),
             url=response.request.url,
-            tags=response.xpath(CGTraderSpiderSpider.TAGS).extract(),
-            description=response.xpath(CGTraderSpiderSpider.DESCRIPTION).extract())
+            tags=response.xpath(CGTraderSpider.TAGS).extract(),
+            description=response.xpath(CGTraderSpider.DESCRIPTION).extract())
 
     URL_IMAGE_SEGMENT_ID_POSITION = 2
 
     @staticmethod
     def _get_id_from_image_url(image_url):
-        return urlparse(image_url).path.split('/')[CGTraderSpiderSpider.URL_IMAGE_SEGMENT_ID_POSITION]
+        return urlparse(image_url).path.split('/')[CGTraderSpider.URL_IMAGE_SEGMENT_ID_POSITION]

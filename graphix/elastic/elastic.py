@@ -58,3 +58,52 @@ class ElasticsearchWriter:
             logger.debug("Model written 'id=%s'.", model.id)
         except RequestError as error:
             logger.error("Could not write '%s'.", error_reason(error))
+
+
+class ElasticsearchReader:
+    """
+    Provides interface for retrieving data from elasticsearch via search API.
+    """
+
+    def __init__(self, elasticsearch):
+        self.elasticsearch = elasticsearch
+        if not self.elasticsearch.ping():
+            raise ValueError("Connection to Elasticsearch cluster has failed.")
+
+    def get_model(self, search):
+        query = {
+            'query': {
+                'bool': {
+                    'should': [
+                        ElasticsearchReader.description_match(search),
+                        ElasticsearchReader.tags_terms(search.split())
+                    ]
+                }
+            },
+            'sort': [
+                '_score',
+                {
+                    'rating.average': {
+                        'numeric_type': 'double',
+                        'order': 'desc'
+                    }
+                }
+            ]
+        }
+        return self.elasticsearch.search(index='_all', body=json.dumps(query))
+
+    @staticmethod
+    def description_match(search):
+        return {
+            'match': {
+                'description.english': {
+                    'query': search,
+                    'auto_generate_synonyms_phrase_query': True,
+                    'fuzziness': 1,
+                },
+            },
+        }
+
+    @staticmethod
+    def tags_terms(tags):
+        return list(map(lambda tag: {'term': {'tags': {'value': tag}}}, tags))

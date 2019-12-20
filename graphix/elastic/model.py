@@ -42,7 +42,7 @@ class Publisher(ElasticModel):
                     'type': 'text'
                 },
                 'email': {
-                    'type': 'text'
+                    'type': 'keyword'
                 },
                 'url': {
                     'type': 'text'
@@ -101,7 +101,7 @@ class Model(ElasticModel):
                 },
                 'rating': {
                     **Rating.get_properties(),
-                    'enabled': False,
+                    'enabled': True,
                 },
                 'image': {
                     'type': 'text',
@@ -111,13 +111,19 @@ class Model(ElasticModel):
                     **Price.get_properties()
                 },
                 'tags': {
-                    'type': 'text'
+                    'type': 'keyword'
                 },
                 'publisher': {
                     **Publisher.get_properties(),
                 },
                 'description': {
-                    'type': 'text'
+                    'type': 'text',
+                    'fields': {
+                        'english': {
+                            'type': 'text',
+                            'analyzer': 'english'
+                        }
+                    }
                 }
             }
         }

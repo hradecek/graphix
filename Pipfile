@@ -9,6 +9,7 @@ verify_ssl = true
 elasticsearch = "*"
 scrapy = "*"
 requests = "*"
+yaml = "*"
 
 [requires]
 python_version = "3.8"

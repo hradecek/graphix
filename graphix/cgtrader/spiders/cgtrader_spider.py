@@ -31,6 +31,10 @@ class CGTraderSpider(Spider):
     PRICE = 'string(//div[@class="product-pricing__price"]/span/span)'
     PUBLISHER_USERNAME = 'string(//div[@class="username"])'
 
+    RATING = '//span[@class="product-ratings__thumbs"]/text()[{index}]'
+    LIKES = RATING.format(index=1)
+    DISLIKES = RATING.format(index=2)
+
     @staticmethod
     def _parse_product(response):
         image = response.xpath(CGTraderSpider.IMAGE).extract()[0]
@@ -39,6 +43,8 @@ class CGTraderSpider(Spider):
             name=response.xpath(CGTraderSpider.NAME).extract(),
             image=image,
             publisher_username=response.xpath(CGTraderSpider.PUBLISHER_USERNAME).extract(),
+            likes=response.xpath(CGTraderSpider.LIKES).extract(),
+            dislikes=response.xpath(CGTraderSpider.DISLIKES).extract(),
             price=response.xpath(CGTraderSpider.PRICE).extract(),
             url=response.request.url,
             tags=response.xpath(CGTraderSpider.TAGS).extract(),

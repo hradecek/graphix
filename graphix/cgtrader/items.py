@@ -9,6 +9,8 @@ class CGTraderProduct(Item):
     name = Field()
     image = Field()
     price = Field()
+    likes = Field()
+    dislikes = Field()
     publisher_username = Field()
     tags = Field()
     url = Field()

@@ -10,6 +10,7 @@ from graphix.elastic.elastic import ElasticsearchWriter
 from graphix.elastic.model import Model, Publisher, Rating, Price
 
 SKIPPED_CATEGORIES = ['audio', 'essentials/tutorial-projects']
+MAX_STAR_RATING = 5
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -36,14 +37,19 @@ def product_to_model(product, category):
     return Model(id=product.id,
                  name=product.name,
                  url=AssetStore.get_package_url(category.name, product.slug),
-                 rating=Rating(product.rating.average, product.rating.count),
+                 rating=get_rating(product.rating),
                  image=product.mainImage.big,
                  price=Price(product.originalPrice.finalPrice, product.originalPrice.currency),
-                 tags=product.popularTags,
+                 tags=list(map(lambda tag: tag['name'].lower(), product.popularTags)),
                  publisher=Publisher(product.publisher.name,
                                      product.publisher.supportEmail,
                                      product.publisher.get_url()),
                  description=product.description)
+
+
+def get_rating(product_rating):
+    """Assetstore is using 5-stars system, hence we need to normalize it."""
+    return Rating(round(product_rating.average / MAX_STAR_RATING, 1), product_rating.count)
 
 
 # Entry point, RUN IT!

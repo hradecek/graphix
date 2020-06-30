@@ -15,20 +15,23 @@ class ElasticsearchWriterPipeline(object):
     """Write scraped model to elasticsearch"""
 
     def process_item(self, item, spider):
-        product = Model(source=BOT_NAME,
-                        id=item['id'],
-                        name=item['name'],
-                        url=item['url'],
-                        rating=get_rating(item['likes'], item['dislikes']),
-                        image=item['image'],
-                        price=Price(parse_price(item['price']), CURRENCY),
-                        tags=item['tags'],
-                        publisher=Publisher(name=item['publisher_username']),
-                        description=item['description'])
-        elasticWriter.write_model(product)
+        model = Model(id=item['id'],
+                      name=item['name'],
+                      url=item['url'],
+                      rating=get_rating(item['likes'], item['dislikes']),
+                      image=item['image'],
+                      price=Price(parse_price(item['price']), CURRENCY),
+                      tags=item['tags'].split(),
+                      publisher=Publisher(name=item['publisher_username']),
+                      description=item['description'])
+        elasticWriter.write_model(model)
 
 
 def get_rating(likes, dislikes):
+    likes = 0 if not likes else int(likes)
+    dislikes = 0 if not dislikes else int(dislikes)
+    if likes == 0 and dislikes == 0:
+        return Rating(0, 0)
     count = likes + dislikes
     average = likes / count
     return Rating(average, count)
